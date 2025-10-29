@@ -1,0 +1,72 @@
+// ===================================================
+// Middleware Implementation: Logging + Bearer Token Authentication
+// ===================================================
+
+const express = require('express');
+const app = express();
+
+app.use(express.json());
+
+// ---------------------------------------------
+// ?? Middleware 1: Logging Middleware
+// Logs request method, URL, and timestamp
+// ---------------------------------------------
+function logger(req, res, next) {
+  const time = new Date().toISOString();
+  console.log(`[${time}] ${req.method} ${req.url}`);
+  next(); // Move to next middleware or route
+}
+
+app.use(logger); // apply globally
+
+// ---------------------------------------------
+// ?? Middleware 2: Bearer Token Authentication
+// Checks if request has a valid token in headers
+// ---------------------------------------------
+function authenticateToken(req, res, next) {
+  const authHeader = req.headers['authorization']; // e.g. "Bearer mytoken123"
+  
+  if (!authHeader) {
+    return res.status(401).json({ error: 'Authorization header missing' });
+  }
+
+  const token = authHeader.split(' ')[1]; // Extract token part
+  const VALID_TOKEN = "mysecret123"; // you can replace this with your own secure key
+
+  if (token !== VALID_TOKEN) {
+    return res.status(403).json({ error: 'Invalid token' });
+  }
+
+  next(); // Token valid, continue to route
+}
+
+// ---------------------------------------------
+// ?? Public Route (No Authentication)
+// ---------------------------------------------
+app.get('/', (req, res) => {
+  res.send('Welcome to the Middleware Demo API ??');
+});
+
+// ---------------------------------------------
+// ?? Protected Route (Requires Bearer Token)
+// ---------------------------------------------
+app.get('/secure', authenticateToken, (req, res) => {
+  res.json({
+    message: 'Access granted ?',
+    data: { secretInfo: 'Node.js + MongoDB are awesome!' }
+  });
+});
+
+// ---------------------------------------------
+// ?? Test Route for POST Requests
+// ---------------------------------------------
+app.post('/log', (req, res) => {
+  console.log('?? Request Body:', req.body);
+  res.json({ message: 'POST request logged successfully' });
+});
+
+// ---------------------------------------------
+// ??? Start Server
+// ---------------------------------------------
+const PORT = 3000;
+app.listen(PORT, () => console.log(`?? Server running on http://localhost:${PORT}`));
